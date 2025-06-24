@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Opening App...</title>
+  <script>
+    // Extract `id` from query string
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("id");
+
+    if (orderId) {
+      // Redirect to deep link
+      window.location.href = `vivaha://order-detail/${orderId}`;
+    }
+  </script>
+</head>
+<body>
+  <p>If your app doesn't open, <a id="fallback" href="#">click here</a>.</p>
+  <script>
+    if (orderId) {
+      document.getElementById("fallback").href = `vivaha://order-detail/${orderId}`;
+    }
+  </script>
+</body>
+</html>
