@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Artifact Utilization Report</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        tr:hover {
+            background: #ececec;
+        }
+        th.asc::after { content: " ▲"; }
+        th.desc::after { content: " ▼"; }
+
+        /* ROI COLORS */
+        .roi-positive {
+            color: green;
+            font-weight: bold;
+        }
+        .roi-negative {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+<h1>Artifact Utilization Report</h1>
+
+<table id="reportTable">
+    <thead>
+    <tr>
+        <th data-col="0">Artifact Group</th>
+        <th data-col="1">Purchase Cost</th>
+        <th data-col="2">Total Orders Used</th>
+        <th data-col="3">Rental Income</th>
+        <th data-col="4">ROI (%)</th>
+    </tr>
+    </thead>
+    <tbody id="tableBody">
+    <tr><td colspan="5">Loading...</td></tr>
+    </tbody>
+</table>
+
+<script>
+    const url = "http://3.110.45.177:8080/artifacts/artifact-utilization-report";
+
+    async function loadData() {
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            data.forEach(item => {
+                const roiClass = item.returnOnInvestment > 0 ? "roi-positive" : "roi-negative";
+
+                const row = `
+                        <tr>
+                            <td>${item.artifactGroup}</td>
+                            <td>${item.purchaseCost}</td>
+                            <td>${item.totalOrdersUsedIn}</td>
+                            <td>${item.rentalIncome}</td>
+                            <td class="${roiClass}">${item.returnOnInvestment}</td>
+                        </tr>
+                    `;
+                tbody.innerHTML += row;
+            });
+        } catch (err) {
+            document.getElementById("tableBody").innerHTML =
+                `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
+        }
+    }
+
+    loadData();
+
+    /* ===========================
+       SORTING LOGIC
+       =========================== */
+    let sortDirection = {};
+
+    document.querySelectorAll("th").forEach(th => {
+        th.addEventListener("click", () => {
+            const columnIndex = th.getAttribute("data-col");
+
+            sortDirection[columnIndex] = !sortDirection[columnIndex];
+            sortTable(columnIndex, sortDirection[columnIndex]);
+
+            document.querySelectorAll("th").forEach(h => h.classList.remove("asc", "desc"));
+            th.classList.add(sortDirection[columnIndex] ? "asc" : "desc");
+        });
+    });
+
+    function sortTable(columnIndex, ascending) {
+        const tbody = document.getElementById("tableBody");
+        let rows = Array.from(tbody.querySelectorAll("tr"));
+
+        const isNumeric = columnIndex != 0;
+
+        rows.sort((a, b) => {
+            let A = a.children[columnIndex].innerText.trim();
+            let B = b.children[columnIndex].innerText.trim();
+
+            if (isNumeric) {
+                A = parseFloat(A);
+                B = parseFloat(B);
+            }
+
+            return ascending ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
+        });
+
+        tbody.innerHTML = "";
+        rows.forEach(r => tbody.appendChild(r));
+    }
+</script>
+
+</body>
+</html>
